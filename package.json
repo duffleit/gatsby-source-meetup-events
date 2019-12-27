@@ -1,0 +1,12 @@
+{
+  "name": "gatsby-source-meetup-events",
+  "version": "1.0.0",
+  "description": "Gatsby source plugin for Meetup events",
+  "main": "gatsby-node.js",
+  "repository": "https://github.com/antonjb/gatsby-source-meetup-events",
+  "author": "Anton Ball <antonball@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.0"
+  }
+}
