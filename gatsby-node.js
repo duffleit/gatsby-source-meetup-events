@@ -8,7 +8,7 @@ exports.createSchemaCustomization = ({ actions }) => {
         created: Date @dateformat
         date_in_series_pattern: Boolean
         description: String
-        duration: Number
+        duration: Int
         fee: Fee
         group: MeetupGroup
         id: String
@@ -17,15 +17,15 @@ exports.createSchemaCustomization = ({ actions }) => {
         local_time: String
         name: String
         rsvp_close_offset: String
-        rsvp_limit: Number
+        rsvp_limit: Int
         status: String
         time: Date @dateformat
         updated: Date @dateformat
-        utc_offset: Number
+        utc_offset: Int
         venue: Venue
         visibility: String
-        waitlist_count: Number
-        yes_rsvp_count: Number
+        waitlist_count: Int
+        yes_rsvp_count: Int
     }
 
     type EventContext implements Node {
@@ -34,7 +34,7 @@ exports.createSchemaCustomization = ({ actions }) => {
 
     type Fee implements Node {
         accepts: String
-        amount: Number
+        amount: Float
         currency: String
         description: String
         label: String
@@ -44,10 +44,10 @@ exports.createSchemaCustomization = ({ actions }) => {
     type MeetupGroup implements Node {
         created: Date @dateformat
         name: String
-        id: Number
+        id: Int
         join_mode: String
-        lat: Number
-        lon: Number
+        lat: Float
+        lon: Float
         urlname: String
         who: String
         localized_location: String
@@ -58,7 +58,7 @@ exports.createSchemaCustomization = ({ actions }) => {
     }
 
     type MeetupPhotoObject implements Node {
-        id: Number
+        id: Int
         highres_link: String
         photo_link: String
         thumb_link: String
@@ -72,10 +72,10 @@ exports.createSchemaCustomization = ({ actions }) => {
         address_3: String
         city: String
         country: String
-        id: Number
-        lat: Number
+        id: Int
+        lat: Float
         localized_country_name: String
-        lon: String
+        lon: Float
         name: String
         phone: String
         repinned: Boolean
@@ -102,7 +102,7 @@ exports.sourceNodes = async (
   });
 
   try {
-    const data = await axiosClient.get(`${groupId}/events`);
+    const { data } = await axiosClient.get(`${groupId}/events`);
 
     data.forEach(event => {
       createNode({
