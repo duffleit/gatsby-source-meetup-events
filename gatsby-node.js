@@ -1,7 +1,9 @@
-const axios = require("axios");
+const axios = require("axios")
+const og = require("open-graph")
+const { createRemoteFileNode } = require("gatsby-source-filesystem")
 
 exports.createSchemaCustomization = ({ actions }) => {
-  const { createTypes } = actions;
+  const { createTypes } = actions
 
   createTypes(`
     type Event implements Node {
@@ -9,9 +11,9 @@ exports.createSchemaCustomization = ({ actions }) => {
         date_in_series_pattern: Boolean
         description: String
         duration: Int
-        fee: Fee
         group: MeetupGroup
         id: String
+        is_online_event: Boolean
         link: String
         local_date: Date @dateformat
         local_time: String
@@ -22,23 +24,10 @@ exports.createSchemaCustomization = ({ actions }) => {
         time: Date @dateformat
         updated: Date @dateformat
         utc_offset: Int
-        venue: Venue
         visibility: String
         waitlist_count: Int
         yes_rsvp_count: Int
-    }
-
-    type EventContext implements Node {
-        host: Boolean
-    }
-
-    type Fee implements Node {
-        accepts: String
-        amount: Float
-        currency: String
-        description: String
-        label: String
-        required: Boolean
+        featuredImg: File @link(from: "fields.localFile")
     }
 
     type MeetupGroup implements Node {
@@ -56,55 +45,24 @@ exports.createSchemaCustomization = ({ actions }) => {
         region: String
         timezone: String
     }
+    `)
+}
 
-    type MeetupPhotoObject implements Node {
-        id: Int
-        highres_link: String
-        photo_link: String
-        thumb_link: String
-        type: String
-        base_url: String
-    }
-
-    type Venue implements Node {
-        address_1: String
-        address_2: String
-        address_3: String
-        city: String
-        country: String
-        id: Int
-        lat: Float
-        localized_country_name: String
-        lon: Float
-        name: String
-        phone: String
-        repinned: Boolean
-        state: String
-        zip: String
-    }
-    `);
-};
-
-exports.sourceNodes = async (
-  { actions, createNodeId, createContentDigest, reporter },
-  { groupId }
-) => {
-  const { createNode } = actions;
+exports.sourceNodes = async ({ actions, createNodeId, createContentDigest, reporter }, { groupId }) => {
+  const { createNode } = actions
 
   if (!groupId) {
-    reporter.panic(
-      "Please define an groupId param to gatsby-source-meetup-events"
-    );
+    reporter.panic("Please define an groupId param to gatsby-source-meetup-events")
   }
 
   const axiosClient = axios.create({
-    baseURL: "https://api.meetup.com/"
-  });
+    baseURL: "https://api.meetup.com/",
+  })
 
   try {
-    const { data } = await axiosClient.get(`${groupId}/events`);
+    const { data } = await axiosClient.get(`${groupId}/events`)
 
-    data.forEach(event => {
+    data.forEach((event) => {
       createNode({
         ...event,
         id: createNodeId(event.id),
@@ -113,11 +71,36 @@ exports.sourceNodes = async (
         internal: {
           type: "Event",
           content: JSON.stringify(event),
-          contentDigest: createContentDigest(event)
-        }
-      });
-    });
+          contentDigest: createContentDigest(event),
+        },
+      })
+    })
   } catch (err) {
-    reporter.panicOnBuild("Error creating Meetup events.");
+    reporter.panicOnBuild("Error creating Meetup events.")
   }
-};
+}
+
+exports.onCreateNode = async ({ node, actions: { createNode, createNodeField }, createNodeId, getCache }) => {
+  if (node.internal.type === "Event" && node.link !== null) {
+    const ogData = await new Promise((resolve, reject) => {
+      return og(node.link, function (err, meta) {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(meta)
+        }
+      })
+    })
+
+    const fileNode = await createRemoteFileNode({
+      url: ogData.image.url,
+      parentNodeId: node.id,
+      createNode,
+      createNodeId,
+      getCache,
+    })
+    if (fileNode) {
+      createNodeField({ node, name: "localFile", value: fileNode.id })
+    }
+  }
+}
