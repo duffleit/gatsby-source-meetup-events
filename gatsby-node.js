@@ -6,14 +6,9 @@ const request = require("request");
 /**
  START OF A dirty HACK: 
  We add "MEETUP_BROWSER_ID" to not get a 500 from meetup.com API
+ everyone loves monkey-patching 🐒:
  */
-
-const uuidv4 = () => {
-  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-  );
-}
-// everyone loves monkey-patching 🐒
+// 
 og.getHTML = function (url, userAgent, cb) {
   request({
     url: url,
@@ -22,7 +17,7 @@ og.getHTML = function (url, userAgent, cb) {
     jar: true,
     cookies: "",
     // here is the change:
-    headers: { 'User-Agent': userAgent, "Cookie": "MEETUP_BROWSER_ID=id=" + uuidv4() },
+    headers: { 'User-Agent': userAgent, "Cookie": "MEETUP_BROWSER_ID=id=" },
   },
     function (err, res, body) {
       if (err) return cb(err);
