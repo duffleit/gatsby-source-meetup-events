@@ -82,10 +82,11 @@ exports.sourceNodes = async ({ actions, createNodeId, createContentDigest, repor
 
 exports.onCreateNode = async ({ node, actions: { createNode, createNodeField }, createNodeId, getCache }) => {
   if (node.internal.type === "Event" && node.link !== null) {
+
     const ogData = await new Promise((resolve, reject) => {
       return og(node.link, function (err, meta) {
         if (err) {
-          reject(err)
+          reject(`Failed by loading open graph for meetup: ${node.link} // error: ${err}`)
         } else {
           resolve(meta)
         }
