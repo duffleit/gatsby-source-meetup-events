@@ -1,6 +1,45 @@
 const axios = require("axios")
 const og = require("open-graph")
 const { createRemoteFileNode } = require("gatsby-source-filesystem")
+const request = require("request");
+
+/**
+ START OF A dirty HACK: 
+ We add "MEETUP_BROWSER_ID" to not get a 500 from meetup.com API
+ */
+
+const uuidv4 = () => {
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
+}
+// everyone loves monkey-patching 🐒
+og.getHTML = function (url, userAgent, cb) {
+  request({
+    url: url,
+    encoding: 'utf8',
+    gzip: true,
+    jar: true,
+    cookies: "",
+    // here is the change:
+    headers: { 'User-Agent': userAgent, "Cookie": "MEETUP_BROWSER_ID=id=" + uuidv4() },
+  },
+    function (err, res, body) {
+      if (err) return cb(err);
+
+      if (res.statusCode === 200) {
+        cb(null, body);
+      }
+      else {
+        cb(new Error("Request failed with HTTP status code: " + res.statusCode));
+      }
+    })
+}
+
+/**
+ END OF HACK
+ */
+
 
 exports.createSchemaCustomization = ({ actions }) => {
   const { createTypes } = actions
@@ -84,9 +123,11 @@ exports.onCreateNode = async ({ node, actions: { createNode, createNodeField }, 
   if (node.internal.type === "Event" && node.link !== null) {
 
     const ogData = await new Promise((resolve, reject) => {
-      return og(node.link, function (err, meta) {
+      const link = node.link.replace(/\/\s*$/, "");
+
+      return og(link, function (err, meta) {
         if (err) {
-          reject(`Failed by loading open graph for meetup: ${node.link} // error: ${err}`)
+          reject(`Failed by loading open graph for meetup: ${link} // error: ${err}`)
         } else {
           resolve(meta)
         }
