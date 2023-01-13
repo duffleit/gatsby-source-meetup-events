@@ -129,8 +129,10 @@ exports.onCreateNode = async ({ node, actions: { createNode, createNodeField }, 
       })
     })
 
+    highResImage = ogData.image.url.replace("global_", "highres_")
+
     const fileNode = await createRemoteFileNode({
-      url: ogData.image.url,
+      url: highResImage,
       parentNodeId: node.id,
       createNode,
       createNodeId,
